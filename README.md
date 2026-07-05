@@ -39,13 +39,13 @@ orsl start --install-dir ./ors --osm-file region.osm.pbf
 
 ## Commands
 
-### `ors-launcher init`
+### `orsl init`
 
 Set up the installation directory (`graphs/`, `elevation_cache/`, `logs/`, `config/`) and write a
 default `config/ors-config.yml` if one doesn't already exist.
 
 ```bash
-ors-launcher init --osm-file /path/to/region.osm.pbf [--install-dir DIR] [--port 8080]
+orsl init --osm-file /path/to/region.osm.pbf [--install-dir DIR] [--port 8080]
 ```
 
 Fails with a clear error if:
@@ -53,13 +53,13 @@ Fails with a clear error if:
 
 Running `init` again when a config already exists leaves it untouched.
 
-### `ors-launcher start`
+### `orsl start`
 
 Start the ORS server. If no config exists yet, it creates a default one first (same behavior as
 `init`), then validates the config and launches `java -jar ors.jar` in the foreground.
 
 ```bash
-ors-launcher start [--osm-file /path/to/file.osm.pbf] [--install-dir DIR] [--port 8080]
+orsl start [--osm-file /path/to/file.osm.pbf] [--install-dir DIR] [--port 8080]
 ```
 
 `--osm-file` is only required here if no config exists yet and one needs to be created.
