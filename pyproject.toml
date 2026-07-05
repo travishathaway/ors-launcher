@@ -1,9 +1,13 @@
 [project]
 name = "ors-launcher"
 version = "0.1.0"
-description = "CLI for installing, configuring, and running a local OpenRouteService (ORS) instance"
+description = "CLI for configuring and running a local OpenRouteService (ORS) instance"
+authors = [
+    { name = "Travis Hathaway", email = "travis.j.hathaway@gmail.com" }
+]
 readme = "README.md"
-    requires-python = ">=3.10"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
 dependencies = [
     "click>=8.3.1",
     "rich>=14.3.3",
@@ -29,9 +33,10 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["integration: marks tests as integration tests (require a live ORS server)"]
 
 [tool.pixi.workspace]
-channels = ["conda-forge"]
+channels = ["conda-forge", "gis-forge"]
 platforms = ["osx-arm64", "linux-aarch64", "linux-64", "win-64"]
 
 [tool.pixi.dependencies]
@@ -40,6 +45,7 @@ click = "*"
 rich = "*"
 pydantic = "*"
 pyyaml = "*"
+openrouteservice = { version = ">=9.9.0,<10", channel = "gis-forge" }
 
 [tool.pixi.pypi-dependencies]
 ors-launcher = { path = ".", editable = true }
@@ -50,7 +56,24 @@ dev = { features = ["dev"], solve-group = "default" }
 
 [tool.pixi.feature.dev.dependencies]
 pytest = "*"
+pytest-cov = "*"
+ruff = "*"
+mypy = "*"
+types-pyyaml = "*"
+prek = "*"
 
 [tool.pixi.feature.dev.tasks]
-test = "pytest"
+test = "pytest tests/unit"
+test-integration = "pytest tests/integration -v"
+coverage = "pytest --cov=ors_launcher --cov-report=html tests/"
+lint = "ruff check ors_launcher tests && mypy ors_launcher"
+hooks-install = "prek install"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
 

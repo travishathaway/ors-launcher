@@ -7,6 +7,7 @@ from ors_launcher.config import (
     dump_config,
     load_config,
 )
+from ors_launcher.constants import DEFAULT_PROFILES
 
 
 def test_minimal_valid_config_parses():
@@ -51,9 +52,11 @@ def test_unknown_keys_round_trip(tmp_path):
     dump_config(config, path)
     reloaded = load_config(path)
 
-    assert reloaded.ors.model_extra["endpoints"]["routing"]["enabled"] is True
+    assert reloaded.ors.endpoints.routing.enabled is True
     assert (
-        reloaded.ors.engine.profiles["driving-car"].build.model_extra["encoder_options"]["turn_costs"]
+        reloaded.ors.engine.profiles["driving-car"].build.model_extra[
+            "encoder_options"
+        ]["turn_costs"]
         is True
     )
 
@@ -65,7 +68,9 @@ def test_invalid_elevation_data_access_raises():
                 "ors": {
                     "engine": {
                         "elevation": {"data_access": "BOGUS"},
-                        "profile_default": {"build": {"source_file": "germany.osm.pbf"}},
+                        "profile_default": {
+                            "build": {"source_file": "germany.osm.pbf"}
+                        },
                         "profiles": {"driving-car": {"enabled": True}},
                     }
                 }
@@ -85,6 +90,34 @@ def test_missing_source_file_raises():
                 }
             }
         )
+
+
+def test_default_config_profiles_and_endpoints(tmp_path):
+    config = build_default_config(
+        osm_file=tmp_path / "berlin.osm.pbf",
+        port=8080,
+        log_dir=tmp_path / "logs",
+        elevation_cache_dir=tmp_path / "elevation_cache",
+    )
+    assert set(config.ors.engine.profiles.keys()) == set(DEFAULT_PROFILES)
+    assert all(p.enabled for p in config.ors.engine.profiles.values())
+    assert config.ors.endpoints.routing.enabled is True
+    assert config.ors.endpoints.isochrones.enabled is True
+    assert config.ors.endpoints.matrix.enabled is True
+
+
+def test_endpoints_round_trip(tmp_path):
+    config = build_default_config(
+        osm_file=tmp_path / "berlin.osm.pbf",
+        port=8080,
+        log_dir=tmp_path / "logs",
+        elevation_cache_dir=tmp_path / "elevation_cache",
+    )
+    path = tmp_path / "ors-config.yml"
+    dump_config(config, path)
+    reloaded = load_config(path)
+    assert reloaded.ors.endpoints.isochrones.enabled is True
+    assert reloaded.ors.endpoints.matrix.enabled is True
 
 
 def test_heap_settings_round_trip(tmp_path):

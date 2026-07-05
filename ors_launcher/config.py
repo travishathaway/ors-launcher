@@ -16,7 +16,7 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from .constants import DEFAULT_PROFILE, LOG_FILE_NAME
+from .constants import DEFAULT_PROFILES, LOG_FILE_NAME
 
 
 class ElevationConfig(BaseModel):
@@ -57,10 +57,50 @@ class EngineConfig(BaseModel):
     profiles: dict[str, ProfileConfig]
 
 
+class EndpointConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    enabled: bool = True
+
+
+class IsochronesEndpointConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    enabled: bool = True
+    maximum_intervals: int = 10
+
+
+class MatrixEndpointConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    enabled: bool = True
+    maximum_visited_nodes: int = 10_000_000
+
+
+class SnapEndpointConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    enabled: bool = True
+    attribution: str = "openrouteservice.org, OpenStreetMap contributors"
+    maximum_locations: int = 5000
+
+
+class EndpointsConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    routing: EndpointConfig = Field(default_factory=EndpointConfig)
+    isochrones: IsochronesEndpointConfig = Field(
+        default_factory=IsochronesEndpointConfig
+    )
+    matrix: MatrixEndpointConfig = Field(default_factory=MatrixEndpointConfig)
+    snap: SnapEndpointConfig = Field(default_factory=SnapEndpointConfig)
+
+
 class OrsSection(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     engine: EngineConfig
+    endpoints: EndpointsConfig = Field(default_factory=EndpointsConfig)
 
 
 class ServerConfig(BaseModel):
@@ -139,8 +179,13 @@ def build_default_config(
                 profile_default=ProfileDefaultConfig(
                     build=ProfileBuildConfig(source_file=str(osm_file), elevation=True)
                 ),
-                profiles={DEFAULT_PROFILE: ProfileConfig(enabled=True)},
-            )
+                profiles={
+                    name: ProfileConfig(enabled=True) for name in DEFAULT_PROFILES
+                },
+            ),
+            endpoints=EndpointsConfig(),
         ),
-        logging=LoggingConfig(file=LoggingFileConfig(name=str(log_dir / LOG_FILE_NAME))),
+        logging=LoggingConfig(
+            file=LoggingFileConfig(name=str(log_dir / LOG_FILE_NAME))
+        ),
     )
